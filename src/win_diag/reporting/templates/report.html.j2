@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="pl" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Raport diagnostyczny Windows — {{ generated_local }}</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-alt: #162033;
+      --border: #334155;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --code-bg: #0b1220;
+      --healthy: #22c55e;
+      --low: #38bdf8;
+      --medium: #f59e0b;
+      --high: #f97316;
+      --critical: #ef4444;
+    }
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-alt: #f1f5f9;
+      --border: #cbd5e1;
+      --text: #0f172a;
+      --muted: #475569;
+      --accent: #0284c7;
+      --code-bg: #f1f5f9;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 28px 20px 64px;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    h1 { margin: 0 0 6px; font-size: 1.65rem; letter-spacing: -0.02em; }
+    h2 { margin: 0 0 14px; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
+    h3 { margin: 0 0 8px; font-size: 1.05rem; }
+    .subtitle { color: var(--muted); font-size: 0.9rem; }
+    .toolbar { display: flex; gap: 10px; align-items: center; }
+    .btn {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 13px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .btn:hover { border-color: var(--accent); }
+    .grid-kpi {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+    }
+    .kpi-card { margin-bottom: 0; padding: 15px 18px; }
+    .kpi-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .kpi-value { font-size: 1.25rem; font-weight: 700; margin-top: 6px; }
+    .kpi-sub { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .sev-healthy { background: rgba(34, 197, 94, 0.16); color: var(--healthy); border: 1px solid rgba(34, 197, 94, 0.4); }
+    .sev-low { background: rgba(56, 189, 248, 0.16); color: var(--low); border: 1px solid rgba(56, 189, 248, 0.4); }
+    .sev-medium { background: rgba(245, 158, 11, 0.16); color: var(--medium); border: 1px solid rgba(245, 158, 11, 0.4); }
+    .sev-high { background: rgba(249, 115, 22, 0.16); color: var(--high); border: 1px solid rgba(249, 115, 22, 0.4); }
+    .sev-critical { background: rgba(239, 68, 68, 0.18); color: var(--critical); border: 1px solid rgba(239, 68, 68, 0.45); }
+    .banner-escalation {
+      border-left: 4px solid var(--medium);
+      background: var(--surface-alt);
+    }
+    .banner-logs {
+      border: 1px solid rgba(245, 158, 11, 0.55);
+      border-left: 5px solid var(--medium);
+      background: rgba(245, 158, 11, 0.07);
+    }
+    .finding {
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 14px;
+    }
+    .finding-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .finding-title { font-weight: 700; font-size: 1.05rem; }
+    .evidence-list { list-style: none; padding: 0; margin: 8px 0 0; }
+    .evidence-list li {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      font-size: 0.88rem;
+    }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.84rem;
+    }
+    .code-box {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 6px 0;
+    }
+    .rec-list { margin: 8px 0 0; padding-left: 20px; }
+    .rec-list li { margin-bottom: 6px; }
+    .log-req {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-top: 12px;
+    }
+    details {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      background: var(--surface-alt);
+      margin-top: 10px;
+    }
+    summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-top: 12px;
+    }
+    th, td {
+      text-align: left;
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    th { color: var(--muted); font-weight: 600; }
+    .privacy-pill {
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: var(--accent);
+    }
+    .copy-btn {
+      float: right;
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      margin-left: 8px;
+    }
+    footer {
+      margin-top: 32px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>Raport diagnostyczny systemu Windows</h1>
+        <div class="subtitle">
+          Wygenerowano: <strong>{{ generated_local }}</strong> &nbsp;|&nbsp;
+          Tryb: <strong>Strict Read-Only (MCP)</strong> &nbsp;|&nbsp;
+          <span class="privacy-pill">
+            {% if keep_anonymized %}
+              Raport zanonimizowany (bezpieczny do udostępnienia)
+            {% else %}
+              Lokalnie zdekodowany (chmura otrzymała 100% danych zanonimizowanych)
+            {% endif %}
+          </span>
+        </div>
+      </div>
+      <div class="toolbar">
+        <button class="btn" id="themeToggle" type="button">Zmień motyw</button>
+      </div>
+    </header>
+
+    <!-- KPI -->
+    <div class="grid-kpi">
+      <div class="card kpi-card">
+        <div class="kpi-label">Stan systemu</div>
+        <div class="kpi-value">
+          <span class="badge sev-{{ diag.overall_health.value }}">{{ diag.overall_health.value }}</span>
+        </div>
+        <div class="kpi-sub">Status diagnozy: <strong>{{ diag.diagnosis_status.value }}</strong></div>
+      </div>
+
+      <div class="card kpi-card">
+        <div class="kpi-label">Pewność diagnozy</div>
+        <div class="kpi-value">{{ (diag.confidence_score * 100) | round(0) | int }}%</div>
+        <div class="kpi-sub">Wykrytych problemów: {{ diag.findings | length }}</div>
+      </div>
+
+      <div class="card kpi-card">
+        <div class="kpi-label">Routing modeli (OpenRouter)</div>
+        <div class="kpi-value">
+          {% if result.escalated %}Tier 2 (Eskalacja){% else %}Tier 1 (Triage){% endif %}
+        </div>
+        <div class="kpi-sub mono">
+          {% if result.escalated %}{{ result.tier2_model }}{% else %}{{ result.tier1_model }}{% endif %}
+        </div>
+      </div>
+
+      <div class="card kpi-card">
+        <div class="kpi-label">Telemetria audytu</div>
+        <div class="kpi-value">{{ result.tool_calls | length }} wywołań MCP</div>
+        <div class="kpi-sub">Tokeny łącznie: {{ total_usage.total }} (in: {{ total_usage.prompt }}, out: {{ total_usage.completion }})</div>
+      </div>
+    </div>
+
+    <!-- Podsumowanie -->
+    <section class="card">
+      <h2>Podsumowanie wykonawcze</h2>
+      <div class="subtitle" style="margin-bottom: 10px;">
+        <strong>Zgłoszony problem / cel audytu:</strong> {{ result.problem_description | fmt }}
+      </div>
+      <p style="margin: 0; font-size: 1rem;">{{ diag.executive_summary | fmt }}</p>
+    </section>
+
+    <!-- Sekcja brakujących logów zewnętrznych (jeśli agent poprosił o dodatkowe dane) -->
+    {% if diag.external_log_requests %}
+    <section class="card banner-logs">
+      <h2>Wymagane dodatkowe logi zewnętrzne</h2>
+      <p style="margin-top: 0;">
+        Dostępna telemetria Windows nie zawiera pełnego śladu przyczyny problemu. Aby agent mógł dokończyć diagnozę,
+        pozyskaj poniższe pliki i zapisz je w katalogu <code class="mono">workspace/external_logs/</code>,
+        a następnie uruchom audyt ponownie. Skill <code class="mono">search_external_log</code> przeskanuje je programistycznie i odfiltruje szum.
+      </p>
+      {% for req in diag.external_log_requests %}
+      <div class="log-req">
+        <h3>{{ loop.index }}. {{ req.log_name | fmt }}</h3>
+        <p style="margin: 6px 0;"><strong>Dlaczego jest potrzebny:</strong> {{ req.reason | fmt }}</p>
+        <p style="margin: 6px 0;"><strong>Jak pozyskać:</strong></p>
+        <div class="code-box mono">
+          <button class="btn copy-btn" type="button" data-copy="{{ req.how_to_obtain | fmt }}">Kopiuj</button>{{ req.how_to_obtain | fmt }}
+        </div>
+        <div class="subtitle" style="margin-top: 8px;">
+          <strong>Format:</strong> {{ req.expected_format }} &nbsp;|&nbsp;
+          <strong>Docelowa ścieżka:</strong> <code class="mono">{{ req.target_directory }}{{ req.example_filename }}</code>
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    <!-- Powody eskalacji (jeśli nastąpiła) -->
+    {% if result.escalated %}
+    <section class="card banner-escalation">
+      <h2>Przebieg eskalacji: {{ result.tier1_model }} &rarr; {{ result.tier2_model }}</h2>
+      <ul style="margin: 0 0 10px; padding-left: 20px;">
+        {% for reason in result.escalation_reasons %}
+        <li>{{ reason | fmt }}</li>
+        {% endfor %}
+      </ul>
+      <details>
+        <summary>Pokaż wstępną diagnozę modelu Tier 1 ({{ result.tier1_model }})</summary>
+        <p style="margin: 10px 0 6px;">
+          <strong>Status Tier 1:</strong> {{ tier1.diagnosis_status.value }} &nbsp;|&nbsp;
+          <strong>Pewność Tier 1:</strong> {{ (tier1.confidence_score * 100) | round(0) | int }}%
+        </p>
+        <p style="margin: 0;">{{ tier1.executive_summary | fmt }}</p>
+      </details>
+    </section>
+    {% endif %}
+
+    <!-- Wykryte problemy i rekomendacje -->
+    <section class="card">
+      <h2>Wykryte problemy i rekomendacje ({{ diag.findings | length }})</h2>
+      {% if not diag.findings %}
+        <p class="subtitle">Nie wykryto istotnych problemów w zebranych warstwach diagnostycznych.</p>
+      {% else %}
+        {% for f in diag.findings %}
+        <article class="finding">
+          <div class="finding-head">
+            <div class="finding-title">{{ loop.index }}. {{ f.title | fmt }}</div>
+            <span class="badge sev-{{ f.severity.value }}">{{ f.severity.value }}</span>
+          </div>
+
+          <p style="margin: 0 0 12px;"><strong>Przyczyna źródłowa:</strong> {{ f.root_cause | fmt }}</p>
+
+          {% if f.recommendations %}
+          <div>
+            <strong>Rekomendowane kroki (do ręcznego wykonania):</strong>
+            <ol class="rec-list">
+              {% for rec in f.recommendations %}
+              <li>{{ rec | fmt }}</li>
+              {% endfor %}
+            </ol>
+          </div>
+          {% endif %}
+
+          {% if f.evidence %}
+          <details open>
+            <summary>Dowody z serwera MCP ({{ f.evidence | length }})</summary>
+            <ul class="evidence-list">
+              {% for ev in f.evidence %}
+              <li>
+                <span class="mono" style="color: var(--accent);">[{{ ev.source_tool }}]</span>
+                <strong class="mono">{{ ev.reference | fmt }}</strong> — {{ ev.summary | fmt }}
+              </li>
+              {% endfor %}
+            </ul>
+          </details>
+          {% endif %}
+        </article>
+        {% endfor %}
+      {% endif %}
+    </section>
+
+    <!-- Otwarte hipotezy -->
+    {% if diag.open_hypotheses %}
+    <section class="card">
+      <h2>Otwarte hipotezy i obszary do obserwacji</h2>
+      <ul style="margin: 0; padding-left: 20px;">
+        {% for hyp in diag.open_hypotheses %}
+        <li style="margin-bottom: 6px;">{{ hyp | fmt }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    <!-- Ślad audytowy MCP i prywatność -->
+    <section class="card">
+      <h2>Ślad audytowy MCP i ochrona prywatności</h2>
+      <p class="subtitle" style="margin-top: 0;">
+        Chronione encje w sesji PrivacyVault:
+        {% for k, v in vault_stats.items() %}
+          <span class="mono">{{ k }}={{ v }}</span>{% if not loop.last %}, {% endif %}
+        {% else %}
+          brak
+        {% endfor %}
+      </p>
+
+      <details>
+        <summary>Historia wywołań narzędzi MCP ({{ result.tool_calls | length }})</summary>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Etap</th>
+              <th>Narzędzie MCP</th>
+              <th>Argumenty (zanonimizowane)</th>
+              <th>Status</th>
+              <th>Czas</th>
+              <th>Rozmiar</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for tc in result.tool_calls %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td class="mono">{{ tc.tier }}</td>
+              <td class="mono"><strong>{{ tc.tool_name }}</strong></td>
+              <td class="mono">{{ tc.arguments | to_pretty_json }}</td>
+              <td class="mono">
+                {{ tc.status }}{% if tc.truncated %} (truncated){% endif %}
+              </td>
+              <td class="mono">{{ tc.duration_ms }} ms</td>
+              <td class="mono">{{ tc.output_chars }} B</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </details>
+
+      <details>
+        <summary>Zużycie tokenów wg poziomu</summary>
+        <table>
+          <thead>
+            <tr>
+              <th>Poziom</th>
+              <th>Prompt tokens</th>
+              <th>Completion tokens</th>
+              <th>Razem</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for tier_name, u in result.usage_by_tier.items() %}
+            <tr>
+              <td class="mono">{{ tier_name }}</td>
+              <td class="mono">{{ u.prompt_tokens }}</td>
+              <td class="mono">{{ u.completion_tokens }}</td>
+              <td class="mono"><strong>{{ u.total_tokens }}</strong></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </details>
+    </section>
+
+    <footer>
+      Wygenerowano lokalnie przez <strong>win-diag-agent</strong> (Strict Read-Only MCP).
+      Start: {{ result.started_at_utc }} | Koniec: {{ result.finished_at_utc }}
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      const root = document.documentElement;
+      const saved = localStorage.getItem("win-diag-theme");
+      if (saved === "light" || saved === "dark") {
+        root.setAttribute("data-theme", saved);
+      }
+      document.getElementById("themeToggle").addEventListener("click", function () {
+        const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        root.setAttribute("data-theme", next);
+        localStorage.setItem("win-diag-theme", next);
+      });
+      document.querySelectorAll(".copy-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          const text = btn.getAttribute("data-copy") || "";
+          navigator.clipboard.writeText(text).then(function () {
+            const orig = btn.textContent;
+            btn.textContent = "Skopiowano!";
+            setTimeout(function () { btn.textContent = orig; }, 1400);
+          });
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

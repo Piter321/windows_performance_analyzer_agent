@@ -1,0 +1,1 @@
+"""Lokalny serwer MCP (Strict Read-Only) do telemetrii systemu Windows."""

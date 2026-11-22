@@ -1,0 +1,1 @@
+"""Warstwa wnioskowania AI: schematy Pydantic, klient OpenRouter i orkiestrator eskalacji."""

@@ -1,0 +1,1 @@
+"""Klient MCP (stdio) z warstwą anonimizacji PrivacyVault."""
